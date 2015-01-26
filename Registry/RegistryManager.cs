@@ -128,7 +128,7 @@ namespace CKAN
             registry.Repositories = repositories;
         }
 
-        private string Serialize()
+        public string Serialize()
         {
             StringBuilder sb = new StringBuilder();
             StringWriter sw = new StringWriter(sb);
@@ -146,7 +146,7 @@ namespace CKAN
             return sw.ToString() + Environment.NewLine;
         }
 
-        private string SerializeCurrentInstall()
+        public string SerializeCurrentInstall()
         {
             // TODO how do we obtain the name of the current KSP instance?
             string kspInstanceName = "default";

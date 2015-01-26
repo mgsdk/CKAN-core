@@ -1,6 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text;
+
+using Microsoft.Win32;
+
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace CKAN
 {
@@ -20,6 +27,7 @@ namespace CKAN
         {
             ConstructKey();
         }
+
         private int InstanceCount
         {
             get { return GetRegistryValue(@"KSPInstanceCount", 0); }
@@ -89,6 +97,38 @@ namespace CKAN
         private T GetRegistryValue<T>(string key, T default_value)
         {
             return (T)Microsoft.Win32.Registry.GetValue(CKAN_KEY, key, default_value);
+        }
+
+        public static string Serialize()
+        {
+            // Get the main key.
+            var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\CKAN");
+
+            if (key == null)
+            {
+                return String.Empty;
+            }
+                
+            return SerializeSubKey(key);
+        }
+
+        private static string SerializeSubKey(RegistryKey key)
+        {
+            string serialized = String.Empty;
+
+            // Loop over all subkeys.
+            foreach (string k in key.GetSubKeyNames())
+            {
+                serialized += SerializeSubKey(key.OpenSubKey(k));
+            }
+
+            // Print all the keys we have here.
+            foreach (string v in key.GetValueNames())
+            {
+                serialized += "Key: " + v + ", value: " + key.GetValue(v) + "\n";
+            }
+
+            return serialized;
         }
     }
 }

@@ -8,8 +8,11 @@ namespace CKAN
     /// </summary>
     public class Kraken : Exception
     {
-        public Kraken(string reason = null, Exception inner_exception = null) : base(reason, inner_exception)
+        public KSP ksp = null;
+
+        public Kraken(string reason = null, Exception inner_exception = null, KSP ksp = null) : base(reason, inner_exception)
         {
+            this.ksp = ksp;
         }
     }
 
