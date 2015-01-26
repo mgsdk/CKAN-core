@@ -56,6 +56,16 @@ namespace CKAN
             return Enumerable.Range(0, InstanceCount).Select(GetInstance).ToList();
         }
 
+        public string GetCachePath()
+        {
+            return GetRegistryValue(@"GlobalCache", String.Empty);
+        }
+
+        public void SetCachePath(string cache_path)
+        {
+            SetRegistryValue(@"GlobalCache", cache_path);
+        }
+
         private void ConstructKey()
         {
             var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\CKAN");
@@ -80,6 +90,8 @@ namespace CKAN
             SetRegistryValue(@"KSPInstanceName_" + instance_number, name);
             SetRegistryValue(@"KSPInstancePath_" + instance_number, ksp.GameDir());
         }        
+
+
 
         private void SetRegistryValue<T>(string key, T value)
         {
