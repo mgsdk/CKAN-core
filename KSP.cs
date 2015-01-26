@@ -56,7 +56,7 @@ namespace CKAN
             
             gamedir = directory;
             Init();
-            Cache = new NetFileCache(DownloadCacheDir());
+            Cache = new NetFileCache();
         }
 
         /// <summary>
