@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
@@ -25,7 +26,7 @@ namespace CKAN
      */
     public class NetFileCache
     {
-        private string cachePath;
+        private string cache_path;
         private static readonly TxFileManager tx_file = new TxFileManager();
         private static readonly ILog log = LogManager.GetLogger(typeof (NetFileCache));
 
@@ -40,16 +41,73 @@ namespace CKAN
                     throw new DirectoryNotFoundKraken(requestedCachePath, "Cannot find cache directory, please create it when calling the cache with a specific path.");
                 }
 
-                cachePath = requestedCachePath;
+                cache_path = requestedCachePath;
 
             }
             else
             {
-                // If no cache was specified, use the system default.
-                cachePath = GetSystemDefaultCachePath();
+                // If no cache was specified, get the path from the registry.
+                cache_path = GetCachePathFromRegistry();
+
+                // If no path was saved in the registry, get the system default.
+                if(String.IsNullOrWhiteSpace(cache_path))
+                {
+                    cache_path = GetSystemDefaultCachePath();
+                }
             }
         }
 
+        /// <summary>
+        /// Gets the cache path from the system registry.
+        /// </summary>
+        /// <returns>The cache path from the system registry.</returns>
+        private string GetCachePathFromRegistry()
+        {
+            Win32Registry registry = new Win32Registry();
+
+            return registry.GetCachePath();
+        }
+
+        /// <summary>
+        /// Moves the default cache from the current folder to the specified new folder.
+        /// </summary>
+        /// <param name="new_path">New path of the cache.</param>
+        public void MoveDefaultCache(string new_path)
+        {
+            // Check input.
+            if (String.IsNullOrWhiteSpace(new_path))
+            {
+                throw new DirectoryNotFoundKraken(new_path, "Argument is null or empty");
+            }
+
+            if (!Directory.Exists(new_path))
+            {
+                throw new DirectoryNotFoundKraken(new_path, "Could not find the requested path");
+            }
+
+            // Get a list of files in the old location.
+            foreach(string file in Directory.EnumerateFiles(cache_path))
+            {
+                string new_file_path = Path.Combine(new_path, Path.GetFileName(file));
+
+                tx_file.Copy(file, new_file_path, true);
+            }
+
+            // If we reached this far without errors, remove the old location.
+            tx_file.DeleteDirectory(cache_path);
+
+            // Store the new location in the registry.
+            Win32Registry registry = new Win32Registry();
+            registry.SetCachePath(new_path);
+
+            // Store the path internally.
+            cache_path = new_path;
+        }
+
+        /// <summary>
+        /// Gets the system default cache path.
+        /// </summary>
+        /// <returns>The system default cache path.</returns>
         public static string GetSystemDefaultCachePath()
         {
             string base_directory = null;
@@ -88,7 +146,7 @@ namespace CKAN
         {
             get
             {
-                return cachePath;
+                return cache_path;
             }
         }
             
@@ -134,7 +192,7 @@ namespace CKAN
 
             string hash = CreateURLHash(url);
 
-            foreach (string file in Directory.GetFiles(cachePath))
+            foreach (string file in Directory.GetFiles(cache_path))
             {
                 string filename = Path.GetFileName(file);
                 if (filename.StartsWith(hash))
@@ -202,7 +260,7 @@ namespace CKAN
             description = description ?? Path.GetFileName(path);
 
             string fullName = String.Format("{0}-{1}", hash, Path.GetFileName(description));
-            string targetPath = Path.Combine(cachePath, fullName);
+            string targetPath = Path.Combine(cache_path, fullName);
 
             log.DebugFormat("Storing {0} in {1}", path, targetPath);
 
