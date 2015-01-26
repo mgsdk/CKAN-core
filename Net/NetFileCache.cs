@@ -28,32 +28,86 @@ namespace CKAN
         private string cachePath;
         private static readonly TxFileManager tx_file = new TxFileManager();
         private static readonly ILog log = LogManager.GetLogger(typeof (NetFileCache));
-   
-        public NetFileCache(string _cachePath)
-        {
-            // Basic validation, our cache has to exist.
 
-            if (!Directory.Exists(_cachePath))
+        public NetFileCache(string requestedCachePath = null)
+        {
+            // Check the input.
+            if (!String.IsNullOrWhiteSpace(requestedCachePath))
             {
-                throw new DirectoryNotFoundKraken(_cachePath, "Cannot find cache directory");
+                // Check that the folder exists.
+                if (!Directory.Exists(requestedCachePath))
+                {
+                    throw new DirectoryNotFoundKraken(requestedCachePath, "Cannot find cache directory, please create it when calling the cache with a specific path.");
+                }
+
+                cachePath = requestedCachePath;
+
+            }
+            else
+            {
+                // If no cache was specified, use the system default.
+                cachePath = GetSystemDefaultCachePath();
+            }
+        }
+
+        public static string GetSystemDefaultCachePath()
+        {
+            string base_directory = null;
+
+            // Check if we are on a Unix-like system.
+            if (Utilities.IsUnix)
+            {
+                // Try to get the cache folder specified by XDG.
+                base_directory = Environment.GetEnvironmentVariable("XDG_CACHE_HOME");
+
+                // If this is not specified, fallback to "~/.local/"
+                if (String.IsNullOrWhiteSpace(base_directory))
+                {
+                    base_directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), ".local/share");
+                }
+            }
+            else
+            {
+                // We are on Windows.
+                base_directory = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
             }
 
-            cachePath = _cachePath;
+            // Append the CKAN folder structure.
+            string directory = Path.Combine(base_directory, "CKAN/downloads");
+
+            // Make sure the folder exists, or create it.
+            if (!Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            return directory;
         }
 
-        public string GetCachePath()
+        public string CachePath
         {
-            return cachePath;
+            get
+            {
+                return cachePath;
+            }
         }
-
-        // returns true if a url is already in the cache
+            
+        /// <summary>
+        /// Determines whether the specified url is cached.
+        /// </summary>
+        /// <returns><c>true</c> if the specified url is cached; otherwise, <c>false</c>.</returns>
+        /// <param name="url">URL to check.</param>
         public bool IsCached(Uri url)
         {
             return GetCachedFilename(url) != null;
         }
 
-        // returns true if a url is already in the cache
-        // returns the filename in the outFilename parameter
+        /// <summary>
+        /// Determines whether the specified url is cached. Returns the filename in the out parameter.
+        /// </summary>
+        /// <returns><c>true</c> if the specified url is cached; otherwise, <c>false</c>.</returns>
+        /// <param name="url">URL to check.</param>
+        /// <param name="outFilename">Out the local filename in the cache if found.</param>
         public bool IsCached(Uri url, out string outFilename)
         {
             outFilename = GetCachedFilename(url);

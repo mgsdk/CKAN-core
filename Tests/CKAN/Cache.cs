@@ -28,7 +28,7 @@ namespace CKANTests
         public void Sanity()
         {
             Assert.IsInstanceOf<CKAN.NetFileCache>(cache);
-            Assert.IsTrue(Directory.Exists(cache.GetCachePath()));
+            Assert.IsTrue(Directory.Exists(cache.CachePath));
         }
 
         [Test]
@@ -38,7 +38,7 @@ namespace CKANTests
             string file = Tests.TestData.DogeCoinFlagZip();
 
             // Sanity check, our cache dir is there, right?
-            Assert.IsTrue(Directory.Exists(cache.GetCachePath()));
+            Assert.IsTrue(Directory.Exists(cache.CachePath));
 
             // Our URL shouldn't be cached to begin with.
             Assert.IsFalse(cache.IsCached(url));
