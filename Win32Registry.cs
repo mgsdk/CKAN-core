@@ -91,8 +91,6 @@ namespace CKAN
             SetRegistryValue(@"KSPInstancePath_" + instance_number, ksp.GameDir());
         }        
 
-
-
         private void SetRegistryValue<T>(string key, T value)
         {
             Microsoft.Win32.Registry.SetValue(CKAN_KEY, key, value);
