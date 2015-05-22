@@ -352,26 +352,34 @@ It is advisable that you reinstall them in order to preserve consistency with th
 
 				foreach (ZipEntry entry in zipfile)
 				{
-					string filename = entry.Name;
+                    try
+                    {
+					    string filename = entry.Name;
 
-					// Skip things we don't want.
-					if (! Regex.IsMatch(filename, filter))
-					{
-						log.DebugFormat("Skipping archive entry {0}", filename);
-						continue;
-					}
+					    // Skip things we don't want.
+					    if (! Regex.IsMatch(filename, filter))
+					    {
+	    					log.DebugFormat("Skipping archive entry {0}", filename);
+    						continue;
+					    }
 
-					log.DebugFormat("Reading CKAN data from {0}", filename);
+					    log.DebugFormat("Reading CKAN data from {0}", filename);
 
-					// Read each file into a string.
-					string metadata_json;
-					using (var stream = new StreamReader(zipfile.GetInputStream(entry)))
-					{
-						metadata_json = stream.ReadToEnd();
-						stream.Close();
-					}
+					    // Read each file into a string.
+					    string metadata_json;
+					    using (var stream = new StreamReader(zipfile.GetInputStream(entry)))
+					    {
+						    metadata_json = stream.ReadToEnd();
+						    stream.Close();
+					    }
 
-					ProcessRegistryMetadataFromJSON(metadata_json, registry, filename);
+					    ProcessRegistryMetadataFromJSON(metadata_json, registry, filename);
+                    }
+                    catch(Exception e)
+                    {
+                        log.InfoFormat("Failed to process metadata for {0}, skipping.", entry.Name);
+                        log.DebugFormat("Metadata processing exception: {0}", e);
+                    }
 				}
 
 				zipfile.Close();
